@@ -1,0 +1,37 @@
+name: Update Adlist Daily
+
+on:
+  schedule:
+    - cron: '0 3 * * *' # 每天 UTC 03:00 (北京时间 11:00) 自动更新
+  workflow_dispatch: # 支持手动触发
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Build Adlists
+        run: |
+          python3 build.py
+
+      - name: Commit and push changes
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add hosts.txt domains.txt
+          if git diff --staged --quiet; then
+            echo "No changes detected."
+          else
+            git commit -m "chore(adlist): auto update adlist [$(date -u +'%Y-%m-%d %H:%M:%S UTC')]"
+            git push
+          fi
